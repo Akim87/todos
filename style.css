@@ -108,6 +108,8 @@ body {
 
 .todos-box {
   padding: 1rem 0;
+  height: 100%;
+  align-items: center;
   min-height: 200px;
 }
 
@@ -116,6 +118,7 @@ body {
   border: #e3e3e3 1px solid;
   border-radius: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
 }
 
 .todo__info {
