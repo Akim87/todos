@@ -22,7 +22,7 @@ body {
 }
 
 .header {
-  padding: 1rem 0;
+	padding: 1rem 0;
 }
 
 .actions-box {
@@ -65,7 +65,8 @@ body {
 .todos-controls_button:after {
   position: absolute;
   content: "\25BC";
-  top: 35%;
+	top: 50%;
+	transform: translateY(-50%);
   font-size: 1rem;
   right: 7%;
 }
@@ -79,7 +80,6 @@ body {
   margin: 0;
   width: 100%;
   left: 0;
-  text-align: left;
   border-radius: 0 0 1rem 1rem;
   border: 1px solid #4fc08d;
   z-index: 1;
@@ -149,6 +149,14 @@ body {
 
 .todo__status--done {
   background-color: #e3e3e3;
+}
+
+.todo__controls {
+  flex-wrap: wrap;
+}
+
+.todo__controls .button {
+  margin-top: 1rem;
 }
 
 .button {
@@ -241,6 +249,10 @@ body {
   text-align: center;
 }
 
+.showAll-button {
+	margin-top: 2rem;
+}
+
 /*============ FLEX GRID ============*/
 
 .d-flex {
@@ -263,10 +275,33 @@ body {
   justify-content: center;
 }
 
+
+/*===== RESPONSIVE =====*/
+
 @media screen and (max-width: 767px) {
   html {
     font-size: 14px;
   }
+}
+
+@media screen and (max-width: 640px) {
+  .button--l {
+		width: 45%;
+	}
+
+	.button--s {
+		width: 45%;
+	}
+}
+
+@media screen and (max-width: 400px) {
+	.wrapper {
+		padding: 1rem;
+	}
+
+	.button {
+		font-size: 1rem;
+	}
 }
 
 
