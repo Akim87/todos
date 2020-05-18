@@ -32,23 +32,30 @@ class TodosStore {
     this.todos.unshift(newTodo);
   }
 
+  editTodo(todoIndex, title, description) {
+    this.todos[todoIndex].title = title;
+    this.todos[todoIndex].description = description;
+  }
+
   deleteTodo(todoIndex) {
     this.todos.splice(todoIndex, 1);
   }
 
-  holdTodo(todoIndex) {
-    this.todos[todoIndex].status == "hold"
-      ? (this.todos[todoIndex].status = "pending")
-      : (this.todos[todoIndex].status = "hold");
+  setStatus(todo, newStatus) {
+    this.hasStatus(todo, newStatus) ? todo.status = 'pending' : todo.status = newStatus;
   }
 
-  doneTodo(todoIndex) {
-    this.todos[todoIndex].status = "done";
+  hasStatus(todo, status) {
+    return todo.status == status
   }
 
-  editTodo(todoIndex, title, description) {
-    this.todos[todoIndex].title = title;
-    this.todos[todoIndex].description = description;
+  setStatusToAll(newStatus) {
+    const undoneTodos = this.todos.filter(todo => !this.hasStatus(todo, 'done'))
+
+    undoneTodos.forEach(todo =>
+      this.hasStatus(todo, 'pending') ?
+      this.setStatus(todo, newStatus) :
+      this.setStatus(todo, 'pending'))
   }
 
   getSearchedTodo(searchValue) {
@@ -57,23 +64,7 @@ class TodosStore {
     );
   }
 
-  bulkHoldTodos() {
-    this.todos.find((todo) => todo.status == "pending")
-      ? this.todos.forEach((todo) => {
-          if (todo.status == "pending") todo.status = "hold";
-        })
-      : this.todos.forEach((todo) => {
-          if (todo.status == "hold") todo.status = "pending";
-        });
-  }
-
-  bulkMarkAsDone() {
-    this.todos.forEach((todo) => {
-      if (todo.status == "pending") todo.status = "done";
-    });
-  }
-
-  bulkDelete() {
+  deleteAll() {
     this.todos = [];
   }
 
@@ -84,15 +75,13 @@ class TodosStore {
   }
 
   sortByStatus() {
-    const sortedByTitle = this.todos.sort((todo, nextTodo) =>
-      todo.title.toLowerCase() > nextTodo.title.toLowerCase() ? 1 : -1
-    );
+    this.sortByTitle()
     const pending = [], hold = [], done = [];
 
-    sortedByTitle.forEach((todo) => {
-      if (todo.status == "pending") pending.push(todo);
-      if (todo.status == "hold") hold.push(todo);
-      if (todo.status == "done") done.push(todo);
+    this.todos.forEach((todo) => {
+      if (this.hasStatus(todo, "pending")) pending.push(todo);
+      if (this.hasStatus(todo, "hold")) hold.push(todo);
+      if (this.hasStatus(todo, "done")) done.push(todo);
     });
     this.todos = [...pending, ...hold, ...done];
   }

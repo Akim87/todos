@@ -7,160 +7,169 @@ import {
   searchTodoFormUI,
   loaderUI,
   notificationUI,
-  showAllButtonUI,
-} from "./componentsUI";
+} from "./temlatesUI";
+import renderer from "./renderer";
 
+//Elements
+const ACTIONS_CONTROLS = document.querySelector(".js-actionsControls");
+const TODOS_BULK_ACTIONS_CONTROLS = document.querySelector(".js-todosBulkActionsControls");
+const ACTION_FORMS_CONTAINER = document.querySelector(".js-actions");
+const TODOS_CONTAINER = document.querySelector(".js-todos-container");
 
-document.addEventListener("DOMContentLoaded", (e) => {
+//Templates
+const TODO_LIST_TEMPLATE = todosUI.getTemplateOfList;
+const TODO_EDITOR_TEMPLATE = todoEditorUI.getTemplate;
+const ADD_TODO_FORM_TEMPLATE = addTodoFormUI.getTemplate();
+const SEARCH_TODO_FORM_TEMPLATE = searchTodoFormUI.getTemplate();
+const LOADER = loaderUI.getTemplate();
+const NO_TODOS_NOTIFICATION = notificationUI.getTemplate();
 
-  renderTodos();
+init();
 
-  document.addEventListener("click", (e) => {
-    e.preventDefault();
+function setStaticListeners() {
+  ACTIONS_CONTROLS.addEventListener("click", onActionsContolsButtonClick);
+  TODOS_BULK_ACTIONS_CONTROLS.addEventListener("click", onBulkActionsButtonClick);
+  document.addEventListener("click", onClearInputButtonClick);
+}
 
-    const todoIndex = todosStore.todos.findIndex((todo) => todo.id == e.target.dataset.id);
-    const todo = todosStore.todos[todoIndex];
-    const todoHTML = e.target.closest('.js-todo');
+function setDynamicListeners() {
+  TODOS_CONTAINER.addEventListener("click", onTodoControlButtonClick);
+}
 
-    if (e.target.matches(".js-openAddTodoFormButton")) {
-      addTodoFormUI.addFormToView();
-
-      const addTodoForm = document.querySelector(".js-addTodoForm");
-      const addTodoButton = document.querySelector(".js-addTodoButton");
-
-      addTodoForm.addEventListener("input", () => {
-        addTodoForm.title.value.length > 2 && addTodoForm.description.value.length > 2
-          ? addTodoButton.removeAttribute("disabled")
-          : addTodoButton.setAttribute("disabled", "");
-      });
-    }
-
-    if (e.target.matches(".js-openSearchTodoFormButton")) {
-      searchTodoFormUI.addFormToView();
-
-      const searchInput = document.querySelector(".js-searchTodoInput");
-      const searchButton = document.querySelector(".js-searchTodoButton");
-
-      searchInput.addEventListener("input", () => {
-        searchInput.value.length > 2
-          ? searchButton.removeAttribute("disabled")
-          : searchButton.setAttribute("disabled", "");
-      });
-    }
-
-    if (e.target.matches(".js-closeFormButton")) {
-      addTodoFormUI.removeFormFromView();
-    }
-
-    if (e.target.matches(".js-clearInputButton")) {
-      e.target.previousElementSibling.value = "";
-      const closestButton = e.target.closest('form').querySelector(".button")
-      closestButton.setAttribute("disabled", "");
-    }
-
-    if (e.target.matches(".js-addTodoButton")) {
-      const form = e.target.closest(".js-addTodoForm");
-
-      todosStore.addTodo(form.title.value, form.description.value);
-      addTodoFormUI.removeFormFromView();
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-searchTodoButton")) {
-      const form = e.target.closest(".js-searchTodoForm");
-
-      todosUI.addTodosToView(todosStore.getSearchedTodo(form.search.value));
-      searchTodoFormUI.removeFormFromView();
-      showAllButtonUI.setShowAllButton();
-    }
-
-    if (e.target.matches(".js-todosControlsButton")) {
-      const dropDown = e.target.querySelector(".js-dropdown")
-
-      dropDown.classList.toggle("dropdown--active");
-
-      e.target.addEventListener("mouseleave", (e) => {
-        if (e.target.matches(".js-todosControlsButton")) {
-          dropDown.classList.remove("dropdown--active");
-        }
-      });
-    }
-
-    if (e.target.matches(".js-bulkHold")) {
-      todosStore.bulkHoldTodos();
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-bulkMarkAsDone")) {
-      todosStore.bulkMarkAsDone();
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-bulkDelete")) {
-      todosStore.bulkDelete();
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-sortByTitle")) {
-      todosStore.sortByTitle();
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-sortByStatus")) {
-      todosStore.sortByStatus();
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-deleteTodoButton")) {
-      todosStore.deleteTodo(todoIndex);
-      renderTodos();
-    }
-
-    if (e.target.matches(".js-holdTodoButton")) {
-      todosStore.holdTodo(todoIndex);
-      todosUI.transformTodo(todo, todoHTML);
-    }
-
-    if (e.target.matches(".js-doneTodoButton")) {
-      todosStore.doneTodo(todoIndex);
-      todosUI.transformTodo(todo, todoHTML);
-    }
-
-    if (e.target.matches(".js-editTodoButton")) {
-      todoEditorUI.openEditor(todo, todoHTML);
-
-      const editorForm = todoHTML.querySelector(".js-todoEditorForm");
-      const saveEditButton = todoHTML.querySelector(".js-saveEditTodoButton");
-
-      editorForm.addEventListener("input", () => {
-        editorForm.title.value.length > 2 && editorForm.description.value.length > 2
-          ? saveEditButton.removeAttribute("disabled")
-          : saveEditButton.setAttribute("disabled", "");
-      });
-    }
-
-    if (e.target.matches(".js-saveEditTodoButton")) {
-      const form = e.target.closest(".js-todoEditorForm");
-
-      todosStore.editTodo(todoIndex, form.title.value, form.description.value);
-      todosUI.transformTodo(todo, todoHTML);
-    }
-
-    if (e.target.matches(".js-cancelEditTodoButton")) {
-      todosUI.transformTodo(todo, todoHTML);
-    }
-
-    if (e.target.matches(".js-showAllButton")) {
-      renderTodos();
-    }
-  });
-
-  function renderTodos() {
-    loaderUI.setLoader();
-    setTimeout(() => {
-      todosStore.todos.length != 0
-        ? todosUI.addTodosToView(todosStore.todos)
-        : notificationUI.setNotification();
-    }, 2000);
+function onActionsContolsButtonClick(e) {
+  if (e.target.matches(".js-openAddTodoFormButton")) {
+    initAddTodoForm();
   }
-});
+  if (e.target.matches(".js-openSearchTodoFormButton")) {
+    initSearchTodoForm();
+  }
+}
+
+function initAddTodoForm() {
+  renderer.addToView(ADD_TODO_FORM_TEMPLATE, ACTION_FORMS_CONTAINER);
+  ACTION_FORMS_CONTAINER.addEventListener("click", onAddTodoFormButtonClick);
+}
+
+function initSearchTodoForm() {
+  renderer.addToView(SEARCH_TODO_FORM_TEMPLATE, ACTION_FORMS_CONTAINER);
+  ACTION_FORMS_CONTAINER.addEventListener("click", onSearchTodoFormButtonClick);
+}
+
+function onAddTodoFormButtonClick(e) {
+  e.preventDefault();
+  if (e.target.matches(".js-addTodoButton")) {
+    const FORM = e.target.closest(".js-addTodoForm");
+    todosStore.addTodo(FORM.title.value, FORM.description.value);
+    renderTodos();
+  }
+  if (e.target.matches(".js-closeFormButton")) {
+    renderer.removeFromview(ACTION_FORMS_CONTAINER);
+  }
+}
+
+function onSearchTodoFormButtonClick(e) {
+  e.preventDefault();
+  if (e.target.matches(".js-searchTodoButton")) {
+    const form = e.target.closest(".js-searchTodoForm");
+    renderTodos(todosStore.getSearchedTodo(form.search.value));
+  }
+  if (e.target.matches(".js-closeFormButton")) {
+    renderer.removeFromview(ACTION_FORMS_CONTAINER);
+  }
+}
+
+function onBulkActionsButtonClick(e) {
+  e.preventDefault();
+  if (e.target.matches(".js-todosControlsButton")) {
+    initDropdown(e);
+  }
+  if (e.target.matches(".js-bulkHold")) {
+    todosStore.setStatusToAll("hold");
+    renderTodos();
+  }
+  if (e.target.matches(".js-bulkMarkAsDone")) {
+    todosStore.setStatusToAll("done");
+    renderTodos();
+  }
+  if (e.target.matches(".js-bulkDelete")) {
+    todosStore.deleteAll();
+    renderTodos();
+  }
+  if (e.target.matches(".js-sortByTitle")) {
+    todosStore.sortByTitle();
+    renderTodos();
+  }
+  if (e.target.matches(".js-sortByStatus")) {
+    todosStore.sortByStatus();
+    renderTodos();
+  }
+}
+
+function initDropdown(e) {
+  const DROPDOWN = e.target.querySelector(".js-dropdown");
+  DROPDOWN.classList.toggle("dropdown--active");
+  e.target.addEventListener("mouseleave", removeDropdown);
+}
+
+function removeDropdown(e) {
+  const DROPDOWN = e.target.querySelector(".js-dropdown");
+  if (e.target.matches(".js-todosControlsButton")) {
+    DROPDOWN.classList.remove("dropdown--active");
+  }
+}
+
+function onTodoControlButtonClick(e) {
+  const todoIndex = todosStore.todos.findIndex((todo) => todo.id == e.target.dataset.id);
+  const todo = todosStore.todos[todoIndex];
+  const todoHTML = e.target.closest('.js-todo');
+
+  if (e.target.matches(".js-deleteTodoButton")) {
+    todosStore.deleteTodo(todoIndex);
+    renderTodos();
+  }
+  if (e.target.matches(".js-holdTodoButton")) {
+    todosStore.setStatus(todo, 'hold');
+    renderTodos();
+  }
+  if (e.target.matches(".js-doneTodoButton")) {
+    todosStore.setStatus(todo, 'done');
+    renderTodos();
+  }
+  if (e.target.matches(".js-editTodoButton")) {
+    initTodoEditor(todo, todoHTML);
+  }
+  if (e.target.matches(".js-saveEditTodoButton")) {
+    const FORM = e.target.closest(".js-todoEditorForm");
+    todosStore.editTodo(todoIndex, FORM.title.value, FORM.description.value);
+    renderTodos();
+  }
+  if (e.target.matches(".js-cancelEditTodoButton")) {
+    renderTodos();
+  }
+}
+
+function initTodoEditor(todo, todoHTML) {
+  renderer.addToView(TODO_EDITOR_TEMPLATE(todo), todoHTML)
+}
+
+function onClearInputButtonClick(e) {
+  e.preventDefault();
+  if (e.target.matches(".js-clearInputButton")) {
+    e.target.previousElementSibling.value = "";
+  }
+}
+
+function renderTodos(todosList = todosStore.todos) {
+  renderer.addToView(LOADER, TODOS_CONTAINER);
+  setTimeout(() => {
+    !!todosStore.todos.length
+      ? renderer.addToView(TODO_LIST_TEMPLATE(todosList), TODOS_CONTAINER)
+      : renderer.addToView(NO_TODOS_NOTIFICATION, TODOS_CONTAINER);
+  }, 2000);
+}
+
+function init() {
+  setStaticListeners();
+  renderTodos();
+  setDynamicListeners();
+}
